@@ -34,7 +34,6 @@ namespace WinFormsApp6
             if (args.Length > 1 && args[1] == "-autostart")
             {
                 // Debug: Display a message box to indicate the app started with -autostart on launch
-                MessageBox.Show("Application started with -autostart at launch.");
                 applicationStartedByRegistry = true;
 
                 this.WindowState = FormWindowState.Minimized;
